@@ -49,8 +49,12 @@ app.get("/api/me", requireUser, (req, res) => {
 });
 
 app.get("/api/students/:id", requireUser, (req, res) => {
+  const requestedId = Number(req.params.id);
+  if (req.claims.role !== "ta" && Number(req.claims.sub) !== requestedId) {
+    return res.status(403).json({ error: "You are not allowed to view this student's grades." });
+  }
   const db = load();
-  const student = db.users.find((row) => row.id === Number(req.params.id) && row.role === "student");
+  const student = db.users.find((row) => row.id === requestedId && row.role === "student");
   if (!student) return res.status(404).json({ error: "No student with that id." });
   const grades = db.grades.filter((row) => row.student_id === student.id);
   res.json({ user: publicUser(student), grades });
